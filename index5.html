@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EventHub Admin | Event Registration & Management Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0B0F19;
+      color: #F8FAFC;
+      background-image: 
+        radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 40%);
+      background-attachment: fixed;
+    }
+    .glass-panel {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid #334155;
+    }
+    .event-id-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #A5B4FC;
+      background: rgba(99, 102, 241, 0.15);
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased">
+
+  <!-- 1. NAVBAR -->
+  <header class="sticky top-0 z-50 bg-[#0B0F19]/85 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('dashboard')">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-white tracking-tight text-lg">EventHub</span>
+            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Admin</span>
+          </div>
+          <p class="text-[11px] text-slate-400">MERN Event Registration Panel</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs: Dashboard & Add Event -->
+      <nav class="flex items-center gap-2">
+        <button id="nav-dashboard" onclick="switchTab('dashboard')" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-indigo-500/15 text-white border border-indigo-500/30">
+          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+          <span>Dashboard</span>
+        </button>
+
+        <button id="nav-addevent" onclick="switchTab('addevent')" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <span>Add Event</span>
+        </button>
+      </nav>
+
+      <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>MongoDB Atlas Live</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- 2. DASHBOARD VIEW -->
+    <section id="view-dashboard" class="space-y-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">Event Management Dashboard</h1>
+          <p class="text-sm text-slate-400 mt-1">Listing Event ID, Event Name, Event Date, Venue, and Total Registrations.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="resetDefaultData()" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition-all">
+            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span>Reset Demo Data</span>
+          </button>
+          <button onclick="switchTab('addevent')" class="px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-95 text-white text-sm font-semibold shadow-lg shadow-indigo-500/25 flex items-center gap-2 transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>Add Event</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700/80">
+          <div class="flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            <span>Total Events</span>
+            <div class="p-2 rounded-lg bg-indigo-500/15 text-indigo-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </div>
+          </div>
+          <div id="stat-total-events" class="text-3xl font-extrabold text-white">0</div>
+          <p class="text-xs text-slate-500 mt-1">Catalogued in database</p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700/80">
+          <div class="flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            <span>Total Registrations</span>
+            <div class="p-2 rounded-lg bg-emerald-500/15 text-emerald-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </div>
+          </div>
+          <div id="stat-total-reg" class="text-3xl font-extrabold text-white">0</div>
+          <p class="text-xs text-slate-500 mt-1">Across all registered events</p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700/80">
+          <div class="flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            <span>Upcoming Events</span>
+            <div class="p-2 rounded-lg bg-amber-500/15 text-amber-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <div id="stat-upcoming" class="text-3xl font-extrabold text-white">0</div>
+          <p class="text-xs text-slate-500 mt-1">Scheduled on calendar</p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-800/80 border border-slate-700/80">
+          <div class="flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            <span>Unique Venues</span>
+            <div class="p-2 rounded-lg bg-cyan-500/15 text-cyan-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+          </div>
+          <div id="stat-venues" class="text-3xl font-extrabold text-white">0</div>
+          <p class="text-xs text-slate-500 mt-1">Active locations</p>
+        </div>
+      </div>
+
+      <!-- Search & Filters Toolbar -->
+      <div class="p-4 rounded-xl bg-slate-800/80 border border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="relative w-full sm:w-80">
+          <svg class="w-4 h-4 absolute left-3 top-3 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" id="search-input" oninput="renderEvents()" placeholder="Search by name, ID, venue..." class="w-full pl-9 pr-4 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <select id="category-filter" onchange="renderEvents()" class="w-full sm:w-auto px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500">
+            <option value="All">All Categories</option>
+            <option value="Technology">Technology</option>
+            <option value="Workshop">Workshop</option>
+            <option value="Design">Design</option>
+            <option value="Conference">Conference</option>
+            <option value="Business">Business</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Main Event Table -->
+      <div class="overflow-x-auto rounded-xl border border-slate-700/80 bg-slate-800/60 shadow-xl">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-900/90 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-700">
+            <tr>
+              <th class="py-3.5 px-4">Event ID</th>
+              <th class="py-3.5 px-4">Event Name</th>
+              <th class="py-3.5 px-4">Event Date</th>
+              <th class="py-3.5 px-4">Venue</th>
+              <th class="py-3.5 px-4">Total Registrations</th>
+              <th class="py-3.5 px-4 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="events-table-body" class="divide-y divide-slate-700/50">
+            <!-- Dynamic rows injected here -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3. ADD EVENT VIEW -->
+    <section id="view-addevent" class="hidden space-y-6">
+      <div class="flex items-center justify-between mb-4">
+        <button onclick="switchTab('dashboard')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+          <span>Back to Dashboard</span>
+        </button>
+        <span class="text-xs text-slate-400">Add New Event &bull; Form with Live Preview</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Form Column -->
+        <div class="lg:col-span-2 p-8 rounded-2xl bg-slate-800/80 border border-slate-700/80 shadow-2xl space-y-6">
+          <div class="border-b border-slate-700/60 pb-4">
+            <h2 class="text-xl font-bold text-white">Create New Event</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Please provide all 4 mandatory fields below.</p>
+          </div>
+
+          <form id="add-form" onsubmit="handleAddEvent(event)" class="space-y-5">
+            <!-- 1. Event Name -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-200 mb-1.5">
+                1. Event Name <span class="text-rose-400">*</span>
+              </label>
+              <input type="text" id="add-name" oninput="updateLivePreview()" required placeholder="e.g. NextGen Web3 & AI Hackathon" class="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500">
+            </div>
+
+            <!-- 2. Event Description -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-200 mb-1.5">
+                2. Event Description <span class="text-rose-400">*</span>
+              </label>
+              <textarea id="add-description" oninput="updateLivePreview()" rows="3" required placeholder="Overview of the schedule, target audience, and keynote topics..." class="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
+            </div>
+
+            <!-- 3. Event Date & 4. Venue -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-200 mb-1.5">
+                  3. Event Date <span class="text-rose-400">*</span>
+                </label>
+                <input type="datetime-local" id="add-date" oninput="updateLivePreview()" required class="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-200 mb-1.5">
+                  4. Venue <span class="text-rose-400">*</span>
+                </label>
+                <input type="text" id="add-venue" oninput="updateLivePreview()" required placeholder="e.g. Innovation Hall A, TechPark" class="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-700/40">
+              <div>
+                <label class="block text-xs font-semibold text-slate-200 mb-1.5">Category</label>
+                <select id="add-category" onchange="updateLivePreview()" class="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500">
+                  <option value="Technology">Technology</option>
+                  <option value="Workshop">Workshop</option>
+                  <option value="Design">Design</option>
+                  <option value="Conference">Conference</option>
+                  <option value="Business">Business</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-200 mb-1.5">Attendee Capacity</label>
+                <input type="number" id="add-capacity" value="300" min="1" class="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500">
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-700/60">
+              <button type="button" onclick="switchTab('dashboard')" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold">Cancel</button>
+              <button type="submit" class="px-5 py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-95 text-white text-sm font-bold shadow-lg shadow-indigo-500/25 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span>Create &amp; Publish Event</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Live Preview Card Column -->
+        <div class="space-y-4">
+          <div class="sticky top-24 space-y-4">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              Live Card Preview
+            </span>
+
+            <div class="p-6 rounded-2xl bg-slate-800/90 border border-slate-700 shadow-xl space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="event-id-badge">EVT-NEW</span>
+                <span id="preview-category" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Technology</span>
+              </div>
+              <h3 id="preview-name" class="text-base font-bold text-white">Event Name Preview</h3>
+              <p id="preview-desc" class="text-xs text-slate-300 line-clamp-3">Description preview will appear here as you type...</p>
+              <div class="pt-3 border-t border-slate-700/60 space-y-2 text-xs text-slate-300">
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  <span id="preview-date">Date & Time not set</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-rose-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+                  <span id="preview-venue">Venue not set</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                  <span><strong>0</strong> Registrations</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 4. EDIT EVENT MODAL -->
+  <div id="modal-edit" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl">
+      <div class="p-5 border-b border-slate-700 flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-white text-base">Update Event Details</h3>
+          <p class="text-xs text-slate-400">Editing <span id="edit-id-display" class="font-mono text-indigo-400"></span></p>
+        </div>
+        <button onclick="closeEditModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <form id="edit-form" onsubmit="handleSaveEdit(event)" class="p-6 space-y-4">
+        <input type="hidden" id="edit-id">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Event Name</label>
+          <input type="text" id="edit-name" required class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Event Description</label>
+          <textarea id="edit-description" rows="2" required class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Event Date</label>
+            <input type="datetime-local" id="edit-date" required class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Venue</label>
+            <input type="text" id="edit-venue" required class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Category</label>
+            <select id="edit-category" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white">
+              <option value="Technology">Technology</option>
+              <option value="Workshop">Workshop</option>
+              <option value="Design">Design</option>
+              <option value="Conference">Conference</option>
+              <option value="Business">Business</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Total Registrations</label>
+            <input type="number" id="edit-reg" min="0" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white">
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-700">
+          <button type="button" onclick="closeEditModal()" class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. DELETE MODAL -->
+  <div id="modal-delete" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 rounded-xl bg-rose-500/20 text-rose-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <div>
+          <h4 class="font-bold text-white text-base">Delete Event?</h4>
+          <p class="text-xs text-slate-400">This action cannot be undone.</p>
+        </div>
+      </div>
+      <p id="delete-name-display" class="text-xs text-slate-300 p-3 bg-slate-900 rounded-lg border border-slate-700"></p>
+      <input type="hidden" id="delete-id">
+      <div class="flex items-center justify-end gap-2">
+        <button onclick="closeDeleteModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold">Cancel</button>
+        <button onclick="confirmDelete()" class="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold">Confirm Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. TOAST CONTAINER -->
+  <div id="toast-box" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- APPLICATION SCRIPT & STATE -->
+  <script>
+    const INITIAL_EVENTS = [
+      {
+        eventId: 'EVT-1001',
+        name: 'Global Tech Innovation Summit 2026',
+        description: 'Annual gathering of software architects, AI researchers, and tech founders.',
+        date: '2026-11-15T09:30',
+        venue: 'Convention Hall A, Silicon Valley Expo Center',
+        totalRegistrations: 420,
+        category: 'Technology',
+        capacity: 500
+      },
+      {
+        eventId: 'EVT-1002',
+        name: 'Full-Stack MERN Architecture Masterclass',
+        description: 'Hands-on workshop covering production MongoDB Atlas clustering & Express.',
+        date: '2026-11-22T14:00',
+        venue: 'Auditorium 4, TechPark Campus, Bangalore',
+        totalRegistrations: 185,
+        category: 'Workshop',
+        capacity: 200
+      },
+      {
+        eventId: 'EVT-1003',
+        name: 'International UI/UX & Design Systems Gala',
+        description: 'World-renowned design leaders showcase cutting-edge design systems.',
+        date: '2026-12-05T10:00',
+        venue: 'Grand Ballroom, Marina Bay Sands, Singapore',
+        totalRegistrations: 310,
+        category: 'Design',
+        capacity: 350
+      },
+      {
+        eventId: 'EVT-1004',
+        name: 'Cloud Native & DevOps Symposium',
+        description: 'Deep dive into Kubernetes container orchestration & distributed CI/CD.',
+        date: '2026-12-18T09:00',
+        venue: 'Metropolitan Hall, Seattle Civic Center',
+        totalRegistrations: 275,
+        category: 'Technology',
+        capacity: 300
+      },
+      {
+        eventId: 'EVT-1005',
+        name: 'NextGen AI & Autonomous Agents Hackathon',
+        description: '48-hour competitive hackathon building autonomous multimodal LLM workflows.',
+        date: '2026-11-28T08:30',
+        venue: 'Innovation Hub, CyberCity, Hyderabad',
+        totalRegistrations: 500,
+        category: 'Conference',
+        capacity: 500
+      }
+    ];
+
+    let events = JSON.parse(localStorage.getItem('eventhub_events')) || INITIAL_EVENTS;
+    let nextCounter = 1006;
+
+    function saveEvents() {
+      localStorage.setItem('eventhub_events', JSON.stringify(events));
+      updateStats();
+      renderEvents();
+    }
+
+    function resetDefaultData() {
+      events = JSON.parse(JSON.stringify(INITIAL_EVENTS));
+      saveEvents();
+      showToast('Demo dataset refreshed to defaults!', 'success');
+    }
+
+    function switchTab(tab) {
+      const viewDash = document.getElementById('view-dashboard');
+      const viewAdd = document.getElementById('view-addevent');
+      const navDash = document.getElementById('nav-dashboard');
+      const navAdd = document.getElementById('nav-addevent');
+
+      if (tab === 'dashboard') {
+        viewDash.classList.remove('hidden');
+        viewAdd.classList.add('hidden');
+        navDash.className = "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-indigo-500/15 text-white border border-indigo-500/30";
+        navAdd.className = "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent";
+        renderEvents();
+      } else {
+        viewDash.classList.add('hidden');
+        viewAdd.classList.remove('hidden');
+        navAdd.className = "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-indigo-500/15 text-white border border-indigo-500/30";
+        navDash.className = "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent";
+        updateLivePreview();
+      }
+    }
+
+    function updateStats() {
+      const totalEvents = events.length;
+      const totalReg = events.reduce((sum, e) => sum + (Number(e.totalRegistrations) || 0), 0);
+      const upcoming = events.filter(e => new Date(e.date) >= new Date()).length;
+      const venues = new Set(events.map(e => e.venue.trim())).size;
+
+      document.getElementById('stat-total-events').innerText = totalEvents;
+      document.getElementById('stat-total-reg').innerText = totalReg.toLocaleString();
+      document.getElementById('stat-upcoming').innerText = upcoming;
+      document.getElementById('stat-venues').innerText = venues;
+    }
+
+    function formatDate(str) {
+      if (!str) return 'TBD';
+      const d = new Date(str);
+      if (isNaN(d.getTime())) return str;
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function renderEvents() {
+      const tbody = document.getElementById('events-table-body');
+      const q = document.getElementById('search-input').value.toLowerCase().trim();
+      const cat = document.getElementById('category-filter').value;
+
+      let filtered = events.filter(e => {
+        const matchesQ = !q || e.name.toLowerCase().includes(q) || e.eventId.toLowerCase().includes(q) || e.venue.toLowerCase().includes(q);
+        const matchesCat = cat === 'All' || e.category === cat;
+        return matchesQ && matchesCat;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-12 text-center text-slate-400">No events matched criteria.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(e => {
+        const reg = Number(e.totalRegistrations) || 0;
+        const cap = Number(e.capacity) || 300;
+        const pct = Math.min(100, Math.round((reg / cap) * 100));
+
+        return `
+          <tr class="hover:bg-slate-800/40 transition-colors">
+            <td class="py-4 px-4 whitespace-nowrap">
+              <span class="event-id-badge">${e.eventId}</span>
+            </td>
+            <td class="py-4 px-4">
+              <div class="font-semibold text-white">${e.name}</div>
+              <div class="text-xs text-slate-400 mt-0.5 line-clamp-1">${e.description}</div>
+              <span class="inline-block mt-1 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-800 text-indigo-300 border border-slate-700">${e.category}</span>
+            </td>
+            <td class="py-4 px-4 whitespace-nowrap text-slate-300 text-xs">
+              ${formatDate(e.date)}
+            </td>
+            <td class="py-4 px-4 text-slate-300 text-xs">
+              ${e.venue}
+            </td>
+            <td class="py-4 px-4">
+              <div class="flex items-center justify-between text-xs mb-1">
+                <span class="font-bold text-white">${reg.toLocaleString()}</span>
+                <button onclick="quickRegister('${e.eventId}')" class="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20" title="Quickly register +1">+1</button>
+              </div>
+              <div class="w-full bg-slate-700/60 rounded-full h-1.5 overflow-hidden">
+                <div class="h-1.5 rounded-full ${pct >= 90 ? 'bg-rose-500' : pct >= 70 ? 'bg-amber-400' : 'bg-emerald-400'}" style="width: ${pct}%"></div>
+              </div>
+            </td>
+            <td class="py-4 px-4 whitespace-nowrap text-center">
+              <div class="flex items-center justify-center gap-2">
+                <button onclick="openEditModal('${e.eventId}')" class="px-2.5 py-1.5 rounded-md bg-slate-700/80 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 text-xs font-semibold border border-slate-600 transition-all">Update</button>
+                <button onclick="openDeleteModal('${e.eventId}')" class="px-2.5 py-1.5 rounded-md bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 text-xs font-semibold border border-rose-500/30 transition-all">Delete</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function updateLivePreview() {
+      const name = document.getElementById('add-name').value.trim();
+      const desc = document.getElementById('add-description').value.trim();
+      const date = document.getElementById('add-date').value;
+      const venue = document.getElementById('add-venue').value.trim();
+      const cat = document.getElementById('add-category').value;
+
+      document.getElementById('preview-name').innerText = name || 'Event Name Preview';
+      document.getElementById('preview-desc').innerText = desc || 'Description preview will appear here as you type...';
+      document.getElementById('preview-date').innerText = date ? formatDate(date) : 'Date & Time not set';
+      document.getElementById('preview-venue').innerText = venue || 'Venue not set';
+      document.getElementById('preview-category').innerText = cat;
+    }
+
+    function handleAddEvent(e) {
+      e.preventDefault();
+      const name = document.getElementById('add-name').value.trim();
+      const description = document.getElementById('add-description').value.trim();
+      const date = document.getElementById('add-date').value;
+      const venue = document.getElementById('add-venue').value.trim();
+      const category = document.getElementById('add-category').value;
+      const capacity = Number(document.getElementById('add-capacity').value) || 250;
+
+      const newEvt = {
+        eventId: 'EVT-' + (nextCounter++),
+        name,
+        description,
+        date,
+        venue,
+        category,
+        capacity,
+        totalRegistrations: 0
+      };
+
+      events.unshift(newEvt);
+      saveEvents();
+      document.getElementById('add-form').reset();
+      showToast(`Event "${name}" created and published!`, 'success');
+      switchTab('dashboard');
+    }
+
+    function openEditModal(id) {
+      const evt = events.find(e => e.eventId === id);
+      if (!evt) return;
+
+      document.getElementById('edit-id').value = evt.eventId;
+      document.getElementById('edit-id-display').innerText = evt.eventId;
+      document.getElementById('edit-name').value = evt.name;
+      document.getElementById('edit-description').value = evt.description;
+      document.getElementById('edit-date').value = evt.date;
+      document.getElementById('edit-venue').value = evt.venue;
+      document.getElementById('edit-category').value = evt.category || 'General';
+      document.getElementById('edit-reg').value = evt.totalRegistrations || 0;
+
+      const modal = document.getElementById('modal-edit');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeEditModal() {
+      const modal = document.getElementById('modal-edit');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function handleSaveEdit(e) {
+      e.preventDefault();
+      const id = document.getElementById('edit-id').value;
+      const evt = events.find(e => e.eventId === id);
+      if (!evt) return;
+
+      evt.name = document.getElementById('edit-name').value.trim();
+      evt.description = document.getElementById('edit-description').value.trim();
+      evt.date = document.getElementById('edit-date').value;
+      evt.venue = document.getElementById('edit-venue').value.trim();
+      evt.category = document.getElementById('edit-category').value;
+      evt.totalRegistrations = Number(document.getElementById('edit-reg').value) || 0;
+
+      saveEvents();
+      closeEditModal();
+      showToast(`Updated "${evt.name}" successfully!`, 'success');
+    }
+
+    function openDeleteModal(id) {
+      const evt = events.find(e => e.eventId === id);
+      if (!evt) return;
+
+      document.getElementById('delete-id').value = evt.eventId;
+      document.getElementById('delete-name-display').innerText = `${evt.name} (${evt.eventId}) - ${evt.venue}`;
+
+      const modal = document.getElementById('modal-delete');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeDeleteModal() {
+      const modal = document.getElementById('modal-delete');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function confirmDelete() {
+      const id = document.getElementById('delete-id').value;
+      const idx = events.findIndex(e => e.eventId === id);
+      if (idx !== -1) {
+        const [deleted] = events.splice(idx, 1);
+        saveEvents();
+        closeDeleteModal();
+        showToast(`Event "${deleted.name}" deleted.`, 'error');
+      }
+    }
+
+    function quickRegister(id) {
+      const evt = events.find(e => e.eventId === id);
+      if (evt) {
+        evt.totalRegistrations = (Number(evt.totalRegistrations) || 0) + 1;
+        saveEvents();
+        showToast(`Registered +1 attendee for "${evt.name}"!`, 'success');
+      }
+    }
+
+    function showToast(msg, type) {
+      const box = document.getElementById('toast-box');
+      const el = document.createElement('div');
+      const isSuccess = type === 'success';
+
+      el.className = `pointer-events-auto flex items-center gap-2 px-4 py-3 rounded-xl border text-xs font-semibold shadow-2xl transition-all duration-300 ${
+        isSuccess ? 'bg-slate-900 border-emerald-500/40 text-emerald-300' : 'bg-slate-900 border-rose-500/40 text-rose-300'
+      }`;
+      el.innerHTML = `
+        <svg class="w-4 h-4 ${isSuccess ? 'text-emerald-400' : 'text-rose-400'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${isSuccess ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'}"/>
+        </svg>
+        <span>${msg}</span>
+      `;
+      box.appendChild(el);
+      setTimeout(() => { el.remove(); }, 4000);
+    }
+
+    // Init on page load
+    updateStats();
+    renderEvents();
+  </script>
+</body>
+</html>
